@@ -19,7 +19,7 @@ async def seed_database():
         from sqlalchemy import select, delete, update
         print("=== ENSURING DEMO USER PASSWORD ===")
         
-        # Check if demo user exists
+        # Check if demo user exists by email
         result = await db.execute(select(User).where(User.email == "rahul.sharma@greenwood.edu"))
         existing_user = result.scalar_one_or_none()
         
@@ -47,6 +47,15 @@ async def seed_database():
             db.add(new_user)
             await db.commit()
             print(f"✓ Created demo user: rahul.sharma@greenwood.edu")
+        
+        # Also check by username to ensure no conflicts
+        result = await db.execute(select(User).where(User.username == "rahul.sharma"))
+        username_user = result.scalar_one_or_none()
+        if username_user and username_user.email != "rahul.sharma@greenwood.edu":
+            print(f"⚠ Found conflicting username user: {username_user.email}")
+            await db.execute(delete(User).where(User.id == username_user.id))
+            await db.commit()
+            print(f"✓ Deleted conflicting username user")
         
         # Check if school already exists (indicates seed already run)
         result = await db.execute(select(School).limit(1))
