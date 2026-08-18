@@ -16,40 +16,26 @@ from app.security.password import get_password_hash
 async def seed_database():
     """Seed the database with sample data for development."""
     async with AsyncSessionLocal() as db:
-        # Force delete and recreate demo user to ensure correct password
-        from sqlalchemy import select, delete
-        print("=== FORCE RECREATING DEMO USER ===")
+        from sqlalchemy import delete
+        print("=== ENSURING DEMO USER EXISTS ===")
         
-        try:
-            # Delete existing demo user if exists
-            await db.execute(delete(User).where(User.email == "rahul.sharma@greenwood.edu"))
-            await db.commit()
-            print("✓ Deleted existing demo user")
-        except Exception as e:
-            print(f"✗ Delete failed (may not exist): {e}")
-            await db.rollback()
+        # Delete existing demo user if exists
+        await db.execute(delete(User).where(User.email == "rahul.sharma@greenwood.edu"))
+        await db.commit()
         
-        try:
-            # Create fresh demo user
-            new_user = User(
-                id=str(uuid.uuid4()),
-                email="rahul.sharma@greenwood.edu",
-                username="rahul.sharma",
-                hashed_password=get_password_hash("student123"),
-                full_name="Rahul Sharma",
-                role=UserRole.STUDENT,
-                is_active=True
-            )
-            db.add(new_user)
-            await db.commit()
-            print(f"✓ Created demo user: rahul.sharma@greenwood.edu")
-            print(f"✓ Password hash: {new_user.hashed_password[:50]}...")
-        except Exception as e:
-            print(f"✗ Create failed: {e}")
-            await db.rollback()
-            raise
-        
-        print("=== DEMO USER SETUP COMPLETE ===")
+        # Create fresh demo user with bcrypt hash
+        new_user = User(
+            id=str(uuid.uuid4()),
+            email="rahul.sharma@greenwood.edu",
+            username="rahul.sharma",
+            hashed_password=get_password_hash("student123"),
+            full_name="Rahul Sharma",
+            role=UserRole.STUDENT,
+            is_active=True
+        )
+        db.add(new_user)
+        await db.commit()
+        print(f"✓ Demo user created: rahul.sharma@greenwood.edu")
         
         # Check if school already exists (indicates seed already run)
         result = await db.execute(select(School).limit(1))
