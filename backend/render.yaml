@@ -37,7 +37,7 @@ services:
       - key: DEBUG
         value: false
       - key: FORCE_REDEPLOY
-        value: "2026-08-18-13-30"
+        value: "2026-08-18-13-45"
 
 databases:
   - name: xyz-ai-postgres
