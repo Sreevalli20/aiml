@@ -10,7 +10,7 @@ from app.config import settings
 router = APIRouter()
 
 
-@router.get("", response_model=HealthResponse)
+@router.get("/health", response_model=HealthResponse)
 async def health_check(db: AsyncSession = Depends(get_db)):
     """Health check endpoint."""
     db_connected = False
