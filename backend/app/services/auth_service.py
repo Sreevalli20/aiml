@@ -50,15 +50,16 @@ class AuthService:
             raise AuthorizationError("Invalid credentials", "INVALID_CREDENTIALS")
         
         print(f"Found user: {user.email}, is_active: {user.is_active}")
-        print(f"Hash length: {len(user.hashed_password)}, hash starts: {user.hashed_password[:30]}...")
-        print(f"Password length: {len(password)}")
         
-        # TEMPORARY: Allow demo account with any password for testing
+        # TEMPORARY: Skip password verification for demo account
         if identifier in ["rahul.sharma@greenwood.edu", "rahul.sharma"] and password == "student123":
             print(f"Demo account bypass for {identifier}")
-        elif not verify_password(password, user.hashed_password):
-            print(f"Password verification failed for {user.email}")
-            raise AuthorizationError("Invalid credentials", "INVALID_CREDENTIALS")
+        else:
+            print(f"Hash length: {len(user.hashed_password)}, hash starts: {user.hashed_password[:30]}...")
+            print(f"Password length: {len(password)}")
+            if not verify_password(password, user.hashed_password):
+                print(f"Password verification failed for {user.email}")
+                raise AuthorizationError("Invalid credentials", "INVALID_CREDENTIALS")
         
         if not user.is_active:
             raise AuthorizationError("Account is inactive", "ACCOUNT_INACTIVE")
