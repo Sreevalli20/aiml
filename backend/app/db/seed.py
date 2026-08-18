@@ -17,7 +17,7 @@ async def seed_database():
     """Seed the database with sample data for development."""
     async with AsyncSessionLocal() as db:
         # Always update user passwords to ensure they match expected values
-        from sqlalchemy import select
+        from sqlalchemy import select, update
         print("Updating user passwords...")
         users_to_update = [
             ("principal@greenwood.edu", "admin123"),
@@ -30,8 +30,10 @@ async def seed_database():
             result = await db.execute(select(User).where(User.email == email))
             user = result.scalar_one_or_none()
             if user:
-                user.hashed_password = get_password_hash(password)
-                print(f"Updated password for {email}")
+                new_hash = get_password_hash(password)
+                user.hashed_password = new_hash
+                await db.flush()
+                print(f"Updated password for {email} - hash: {new_hash[:30]}...")
             else:
                 print(f"User not found: {email}")
         await db.commit()
