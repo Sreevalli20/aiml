@@ -27,7 +27,13 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 # Set the database URL from settings
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Use sync driver for alembic migrations
+db_url = settings.database_url
+if db_url.startswith("postgresql+asyncpg://"):
+    db_url = db_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+elif db_url.startswith("postgres+asyncpg://"):
+    db_url = db_url.replace("postgres+asyncpg://", "postgresql://", 1)
+config.set_main_option("sqlalchemy.url", db_url)
 
 
 def run_migrations_offline() -> None:
