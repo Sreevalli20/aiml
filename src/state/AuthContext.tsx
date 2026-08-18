@@ -94,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (resp && (resp.token || resp.access_token)) {
-        const token = resp.token || resp.access_token || '';
+        const token = typeof resp.token === 'string' ? resp.token : (resp.token as any)?.access_token || resp.access_token || '';
         if (token) {
           localStorage.setItem('xyz_auth_token', token);
           setToken(token);

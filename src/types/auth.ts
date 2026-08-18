@@ -21,7 +21,7 @@ export interface LoginCredentials {
 }
 
 export interface AuthResponse {
-  token: string;
+  token: string | { access_token: string; token_type: string; expires_in: number };
   refreshToken?: string;
   user: UserProfile;
   expiresIn?: number;
