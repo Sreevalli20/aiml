@@ -32,26 +32,24 @@ async def seed_database():
             result = await db.execute(select(User).where(User.email == email))
             user = result.scalar_one_or_none()
             
-            new_hash = get_password_hash(password)
-            
             if user:
                 # Update existing user
-                user.hashed_password = new_hash
+                user.hashed_password = get_password_hash(password)
                 user.is_active = True
-                print(f"✓ Updated password for {email}, hash: {new_hash[:30]}...")
+                print(f"✓ Updated password for {email}")
             else:
                 # Create new user
                 new_user = User(
                     id=str(uuid.uuid4()),
                     email=email,
                     username=username,
-                    hashed_password=new_hash,
+                    hashed_password=get_password_hash(password),
                     full_name=full_name,
                     role=role,
                     is_active=True
                 )
                 db.add(new_user)
-                print(f"✓ Created new user {email}, hash: {new_hash[:30]}...")
+                print(f"✓ Created new user {email}")
         
         await db.commit()
         print("=== USER PASSWORD UPDATE COMPLETE ===")

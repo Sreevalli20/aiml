@@ -23,36 +23,14 @@ class AuthService:
         """Authenticate a user and return user with access token."""
         user = await self.user_repo.get_by_identifier(identifier)
         
-        # TEMPORARY: Create demo user if doesn't exist
-        if not user and identifier in ["rahul.sharma@greenwood.edu", "rahul.sharma"]:
-            print(f"Creating demo user for {identifier}")
-            import uuid
-            from app.models.user import UserRole
-            from app.security.password import get_password_hash
-            
-            new_user = User(
-                id=str(uuid.uuid4()),
-                email="rahul.sharma@greenwood.edu",
-                username="rahul.sharma",
-                hashed_password=get_password_hash("student123"),
-                full_name="Rahul Sharma",
-                role=UserRole.STUDENT,
-                is_active=True
-            )
-            self.db.add(new_user)
-            await self.db.commit()
-            await self.db.refresh(new_user)
-            user = new_user
-            print(f"Created demo user: {user.email}")
-        
         if not user:
-            print(f"User not found for identifier: {identifier}")
             raise AuthorizationError("Invalid credentials", "INVALID_CREDENTIALS")
         
-        print(f"Found user: {user.email}, is_active: {user.is_active}")
+        if not verify_password(password, user.hashed_password):
+            raise AuthorizationError("Invalid credentials", "INVALID_CREDENTIALS")
         
-        # TEMPORARY: Completely skip password verification and is_active check for all users
-        print(f"TEMPORARY: Skipping password verification and is_active check for all users")
+        if not user.is_active:
+            raise AuthorizationError("Account is inactive", "ACCOUNT_INACTIVE")
         
         # Create access token
         access_token = create_access_token(

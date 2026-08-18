@@ -19,17 +19,14 @@ async def login(
     db: AsyncSession = Depends(get_db)
 ):
     """Authenticate user and return JWT token."""
-    print(f"Login attempt for identifier: {credentials.identifier}")
     auth_service = AuthService(db)
     audit_service = AuditService(db)
     
     try:
-        print("Calling authenticate_user...")
         user, access_token = await auth_service.authenticate_user(
             credentials.identifier,
             credentials.password
         )
-        print(f"Authentication successful for user: {user.email}")
         
         # Log successful login (non-blocking)
         try:
@@ -61,11 +58,6 @@ async def login(
             )
         )
     except Exception as e:
-        # Log the actual exception for debugging
-        print(f"Login failed with exception: {type(e).__name__}: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        
         # Log failed login attempt (non-blocking)
         try:
             await audit_service.log_action(
