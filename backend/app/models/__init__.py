@@ -6,6 +6,9 @@ from .school import School
 from .class_model import ClassModel
 from .subject import Subject
 from .student_parent_relationship import StudentParentRelationship
+from .student_class_relationship import StudentClassRelationship
+from .teacher_class_assignment import TeacherClassAssignment
+from .class_subject_assignment import ClassSubjectAssignment
 from .attendance import Attendance, AttendanceStatus
 from .conversation import Conversation, ConversationMessage
 from .escalation import EscalationRequest, EscalationStatus, EscalationType
@@ -20,6 +23,9 @@ __all__ = [
     "ClassModel",
     "Subject",
     "StudentParentRelationship",
+    "StudentClassRelationship",
+    "TeacherClassAssignment",
+    "ClassSubjectAssignment",
     "Attendance",
     "AttendanceStatus",
     "Conversation",
