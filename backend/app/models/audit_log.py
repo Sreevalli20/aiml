@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Text, JSON, Enum as SQLEnum
+from sqlalchemy import Column, String, DateTime, Text, JSON, Boolean, Enum as SQLEnum
 from sqlalchemy.sql import func
 from app.db import Base
 import enum
@@ -30,6 +30,6 @@ class AuditLog(Base):
     details = Column(JSON, nullable=True)
     ip_address = Column(String, nullable=True)
     user_agent = Column(String, nullable=True)
-    success = Column(String, default=True, nullable=False)
+    success = Column(Boolean, default=True, nullable=False)
     correlation_id = Column(String, nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
