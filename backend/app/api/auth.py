@@ -125,15 +125,25 @@ async def demo_login(
     from app.security.jwt import create_access_token
     from datetime import timedelta
     from app.config import settings
+    from app.models.user import UserRole
     import uuid
     
     auth_service = AuthService(db)
     audit_service = AuditService(db)
     
+    # Convert string role to UserRole enum
+    try:
+        role_enum = UserRole(request_data.role.lower())
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid role: {request_data.role}. Must be one of: student, parent, teacher, principal"
+        )
+    
     # Find an existing active user with the requested role
     result = await db.execute(
         select(User)
-        .where(User.role == request_data.role)
+        .where(User.role == role_enum)
         .where(User.is_active == True)
         .limit(1)
     )
@@ -142,14 +152,13 @@ async def demo_login(
     # If no user exists, create a demo user
     if not user:
         from passlib.context import CryptContext
-        from app.models.user import UserRole
         
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         demo_password = "demo123"
         hashed_password = pwd_context.hash(demo_password)
         
         user_id = str(uuid.uuid4())
-        role_str = request_data.role.value
+        role_str = role_enum.value
         
         user = User(
             id=user_id,
@@ -157,7 +166,7 @@ async def demo_login(
             username=f"demo_{role_str}",
             hashed_password=hashed_password,
             full_name=f"Demo {role_str.capitalize()}",
-            role=request_data.role,
+            role=role_enum,
             is_active=True
         )
         db.add(user)

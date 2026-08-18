@@ -41,4 +41,4 @@ class LoginResponse(BaseModel):
 
 
 class DemoLoginRequest(BaseModel):
-    role: UserRole
+    role: str
