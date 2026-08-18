@@ -12,7 +12,7 @@ export const attendanceApi = {
    * Fetch attendance data for the currently authenticated student.
    */
   async getMyAttendance(): Promise<AttendanceSummary> {
-    const res = await apiClient.get<ApiResponse<AttendanceSummary> | AttendanceSummary>('/api/attendance/me');
+    const res = await apiClient.get<ApiResponse<AttendanceSummary> | AttendanceSummary>('/api/v1/attendance/me');
     if ('data' in res && res.data) {
       return res.data;
     }
@@ -24,7 +24,7 @@ export const attendanceApi = {
    */
   async getChildAttendance(childId: string): Promise<AttendanceSummary> {
     const res = await apiClient.get<ApiResponse<AttendanceSummary> | AttendanceSummary>(
-      `/api/attendance/child/${childId}`
+      `/api/v1/attendance/child/${childId}`
     );
     if ('data' in res && res.data) {
       return res.data;
@@ -38,7 +38,7 @@ export const attendanceApi = {
    */
   async markAttendance(payload: MarkAttendanceRequest): Promise<MarkAttendanceResponse> {
     const res = await apiClient.post<ApiResponse<MarkAttendanceResponse> | MarkAttendanceResponse>(
-      '/api/attendance/mark',
+      '/api/v1/attendance/mark',
       payload
     );
     if ('data' in res && res.data) {
@@ -52,7 +52,7 @@ export const attendanceApi = {
    */
   async getAttendanceAnalytics(): Promise<AttendanceAnalytics> {
     const res = await apiClient.get<ApiResponse<AttendanceAnalytics> | AttendanceAnalytics>(
-      '/api/attendance/analytics'
+      '/api/v1/attendance/analytics'
     );
     if ('data' in res && res.data) {
       return res.data;

@@ -14,7 +14,7 @@ export const chatApi = {
    */
   async sendMessage(payload: ChatRequestPayload): Promise<ChatResponsePayload> {
     const res = await apiClient.post<ApiResponse<ChatResponsePayload> | ChatResponsePayload>(
-      '/api/chat',
+      '/api/v1/chat',
       payload
     );
     if ('data' in res && res.data) {
@@ -28,7 +28,7 @@ export const chatApi = {
    */
   async getConversations(): Promise<ConversationSummary[]> {
     const res = await apiClient.get<ApiResponse<ConversationSummary[]> | ConversationSummary[]>(
-      '/api/conversations'
+      '/api/v1/chat/conversations'
     );
     if ('data' in res && Array.isArray(res.data)) {
       return res.data;
@@ -44,7 +44,7 @@ export const chatApi = {
    */
   async getConversationMessages(conversationId: string): Promise<ChatMessage[]> {
     const res = await apiClient.get<ApiResponse<ChatMessage[]> | ChatMessage[]>(
-      `/api/conversations/${conversationId}`
+      `/api/v1/chat/conversations/${conversationId}`
     );
     if ('data' in res && Array.isArray(res.data)) {
       return res.data;
@@ -60,7 +60,7 @@ export const chatApi = {
    */
   async createConversation(title?: string): Promise<{ conversation_id: string; title: string }> {
     const res = await apiClient.post<ApiResponse<{ conversation_id: string; title: string }> | { conversation_id: string; title: string }>(
-      '/api/conversations',
+      '/api/v1/chat/conversations',
       { title: title || 'New Conversation' }
     );
     if ('data' in res && res.data) {
@@ -73,6 +73,6 @@ export const chatApi = {
    * Delete a conversation session.
    */
   async deleteConversation(conversationId: string): Promise<void> {
-    await apiClient.delete(`/api/conversations/${conversationId}`);
+    await apiClient.delete(`/api/v1/chat/conversations/${conversationId}`);
   }
 };

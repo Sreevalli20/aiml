@@ -8,7 +8,7 @@ export const authApi = {
    * Note: The real backend performs password verification, JWT token issuance, and role authorization.
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const res = await apiClient.post<ApiResponse<AuthResponse> | AuthResponse>('/api/auth/login', credentials);
+    const res = await apiClient.post<ApiResponse<AuthResponse> | AuthResponse>('/api/v1/auth/login', credentials);
     if ('data' in res && res.data) {
       return res.data;
     }
@@ -19,7 +19,7 @@ export const authApi = {
    * Fetch authenticated user's profile and verified role from JWT token.
    */
   async getMe(): Promise<UserProfile> {
-    const res = await apiClient.get<ApiResponse<UserProfile> | UserProfile>('/api/auth/me');
+    const res = await apiClient.get<ApiResponse<UserProfile> | UserProfile>('/api/v1/auth/me');
     if ('data' in res && res.data) {
       return res.data;
     }
@@ -31,7 +31,7 @@ export const authApi = {
    */
   async logout(): Promise<void> {
     try {
-      await apiClient.post('/api/auth/logout');
+      await apiClient.post('/api/v1/auth/logout');
     } catch {
       // Ignore network errors on logout
     } finally {
