@@ -120,11 +120,12 @@ async def demo_login(
     request: Request,
     db: AsyncSession = Depends(get_db)
 ):
-    """Demo login without password - finds an existing sample user for the role."""
+    """Demo login without password - finds or creates a demo user for the role."""
     from sqlalchemy import select
     from app.security.jwt import create_access_token
     from datetime import timedelta
     from app.config import settings
+    import uuid
     
     auth_service = AuthService(db)
     audit_service = AuditService(db)
@@ -138,11 +139,29 @@ async def demo_login(
     )
     user = result.scalar_one_or_none()
     
+    # If no user exists, create a demo user
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No demo user found for role: {request_data.role.value}"
+        import bcrypt
+        from app.models.user import UserRole
+        
+        demo_password = "demo123"
+        hashed_password = bcrypt.hashpw(demo_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        user_id = str(uuid.uuid4())
+        role_str = request_data.role.value
+        
+        user = User(
+            id=user_id,
+            email=f"demo_{role_str}@xyz.ai",
+            username=f"demo_{role_str}",
+            hashed_password=hashed_password,
+            full_name=f"Demo {role_str.capitalize()}",
+            role=request_data.role,
+            is_active=True
         )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
     
     # Create access token using existing JWT creation logic
     access_token = create_access_token(
