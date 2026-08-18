@@ -28,15 +28,19 @@ async def login(
             credentials.password
         )
         
-        # Log successful login
-        await audit_service.log_action(
-            user_id=user.id,
-            user_role=user.role.value,
-            action=AuditAction.LOGIN,
-            ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent"),
-            success=True
-        )
+        # Log successful login (non-blocking)
+        try:
+            await audit_service.log_action(
+                user_id=user.id,
+                user_role=user.role.value,
+                action=AuditAction.LOGIN,
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+                success=True
+            )
+        except Exception as audit_error:
+            # Log audit failure but don't block login
+            print(f"Audit log failed: {audit_error}")
         
         return LoginResponse(
             token={"access_token": access_token, "token_type": "bearer", "expires_in": 3600},
@@ -50,16 +54,21 @@ async def login(
             )
         )
     except Exception as e:
-        # Log failed login attempt
-        await audit_service.log_action(
-            user_id="unknown",
-            user_role="unknown",
-            action=AuditAction.LOGIN,
-            ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent"),
-            success=False,
-            details={"identifier": credentials.identifier}
-        )
+        # Log failed login attempt (non-blocking)
+        try:
+            await audit_service.log_action(
+                user_id="unknown",
+                user_role="unknown",
+                action=AuditAction.LOGIN,
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+                success=False,
+                details={"identifier": credentials.identifier}
+            )
+        except Exception as audit_error:
+            # Log audit failure but don't block error response
+            print(f"Audit log failed: {audit_error}")
+        
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
