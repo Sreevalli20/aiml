@@ -18,10 +18,13 @@ async def lifespan(app: FastAPI):
     print(f"Debug mode: {settings.debug}")
     
     # Initialize database (creates tables if they don't exist)
-    # In production, use Alembic migrations instead
-    if settings.debug:
+    # Always run as fallback if Alembic migrations fail
+    try:
         await init_db()
         print("Database initialized")
+    except Exception as e:
+        print(f"Database initialization failed: {e}")
+        # Continue anyway - migrations might have handled it
     
     yield
     
