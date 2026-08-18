@@ -16,28 +16,32 @@ from app.security.password import get_password_hash
 async def seed_database():
     """Seed the database with sample data for development."""
     async with AsyncSessionLocal() as db:
-        # Always update user passwords to ensure they match expected values
-        from sqlalchemy import select, update
-        print("Updating user passwords...")
-        users_to_update = [
-            ("principal@greenwood.edu", "admin123"),
-            ("anjali.rao@greenwood.edu", "teacher123"),
-            ("rahul.sharma@greenwood.edu", "student123"),
-            ("sneha.patel@greenwood.edu", "student123"),
-            ("alok.sharma@gmail.com", "parent123"),
-        ]
-        for email, password in users_to_update:
-            result = await db.execute(select(User).where(User.email == email))
-            user = result.scalar_one_or_none()
-            if user:
-                new_hash = get_password_hash(password)
-                user.hashed_password = new_hash
-                await db.flush()
-                print(f"Updated password for {email} - hash: {new_hash[:30]}...")
-            else:
-                print(f"User not found: {email}")
-        await db.commit()
-        print("Password updates completed!")
+        try:
+            # Always update user passwords to ensure they match expected values
+            from sqlalchemy import select, update
+            print("Updating user passwords...")
+            users_to_update = [
+                ("principal@greenwood.edu", "admin123"),
+                ("anjali.rao@greenwood.edu", "teacher123"),
+                ("rahul.sharma@greenwood.edu", "student123"),
+                ("sneha.patel@greenwood.edu", "student123"),
+                ("alok.sharma@gmail.com", "parent123"),
+            ]
+            for email, password in users_to_update:
+                result = await db.execute(select(User).where(User.email == email))
+                user = result.scalar_one_or_none()
+                if user:
+                    new_hash = get_password_hash(password)
+                    user.hashed_password = new_hash
+                    await db.flush()
+                    print(f"Updated password for {email} - hash: {new_hash[:30]}...")
+                else:
+                    print(f"User not found: {email}")
+            await db.commit()
+            print("Password updates completed!")
+        except Exception as e:
+            print(f"Error updating passwords: {e}")
+            await db.rollback()
         
         # Check if school already exists (indicates seed already run)
         result = await db.execute(select(School).limit(1))
