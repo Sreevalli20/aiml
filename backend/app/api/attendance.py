@@ -52,15 +52,15 @@ async def get_my_attendance(
         
         return AttendanceResponse(
             student_id="demo_student",
-            overall_percentage=92.0,
-            total_days=180,
+            student_name="Demo Student",
+            attendance_percentage=92.0,
             present_days=166,
             absent_days=14,
-            late_days=0,
-            monthly_breakdown=[
-                {"month": "January", "present": 20, "absent": 1, "percentage": 95.2},
-                {"month": "February", "present": 18, "absent": 2, "percentage": 90.0},
-                {"month": "March", "present": 22, "absent": 0, "percentage": 100.0},
+            working_days=180,
+            history=[
+                {"month": "January", "present": 20, "working": 21, "percentage": 95.2},
+                {"month": "February", "present": 18, "working": 20, "percentage": 90.0},
+                {"month": "March", "present": 22, "working": 22, "percentage": 100.0},
             ]
         )
     
