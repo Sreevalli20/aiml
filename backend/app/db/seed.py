@@ -16,29 +16,31 @@ from app.security.password import get_password_hash
 async def seed_database():
     """Seed the database with sample data for development."""
     async with AsyncSessionLocal() as db:
-        # Check if school already exists (indicates seed already run)
+        # Always update user passwords to ensure they match expected values
         from sqlalchemy import select
+        print("Updating user passwords...")
+        users_to_update = [
+            ("principal@greenwood.edu", "admin123"),
+            ("anjali.rao@greenwood.edu", "teacher123"),
+            ("rahul.sharma@greenwood.edu", "student123"),
+            ("sneha.patel@greenwood.edu", "student123"),
+            ("alok.sharma@gmail.com", "parent123"),
+        ]
+        for email, password in users_to_update:
+            result = await db.execute(select(User).where(User.email == email))
+            user = result.scalar_one_or_none()
+            if user:
+                user.hashed_password = get_password_hash(password)
+                print(f"Updated password for {email}")
+            else:
+                print(f"User not found: {email}")
+        await db.commit()
+        print("Password updates completed!")
+        
+        # Check if school already exists (indicates seed already run)
         result = await db.execute(select(School).limit(1))
-        existing_school = result.scalar_one_or_none()
-        if existing_school:
-            print("Database already seeded, updating user passwords...")
-            # Update existing user passwords to ensure they match
-            from sqlalchemy import update
-            users_to_update = [
-                ("principal@greenwood.edu", "admin123"),
-                ("anjali.rao@greenwood.edu", "teacher123"),
-                ("rahul.sharma@greenwood.edu", "student123"),
-                ("sneha.patel@greenwood.edu", "student123"),
-                ("alok.sharma@gmail.com", "parent123"),
-            ]
-            for email, password in users_to_update:
-                result = await db.execute(select(User).where(User.email == email))
-                user = result.scalar_one_or_none()
-                if user:
-                    user.hashed_password = get_password_hash(password)
-                    print(f"Updated password for {email}")
-            await db.commit()
-            print("Password updates completed!")
+        if result.scalar_one_or_none():
+            print("Database already seeded, skipping data creation...")
             return
         # Create school
         school = School(
