@@ -16,49 +16,26 @@ from app.security.password import get_password_hash
 async def seed_database():
     """Seed the database with sample data for development."""
     async with AsyncSessionLocal() as db:
-        # Force update user passwords on every run
-        from sqlalchemy import select
-        print("=== FORCE UPDATING USER PASSWORDS ===")
-        users_to_update = [
-            ("principal@greenwood.edu", "admin123"),
-            ("anjali.rao@greenwood.edu", "teacher123"),
-            ("rahul.sharma@greenwood.edu", "student123"),
-            ("sneha.patel@greenwood.edu", "student123"),
-            ("alok.sharma@gmail.com", "parent123"),
-        ]
-        for email, password in users_to_update:
-            result = await db.execute(select(User).where(User.email == email))
-            user = result.scalar_one_or_none()
-            if user:
-                new_hash = get_password_hash(password)
-                user.hashed_password = new_hash
-                user.is_active = True
-                await db.flush()
-                print(f"✓ Updated password for {email}")
-            else:
-                print(f"✗ User not found: {email}")
+        # Delete ALL existing data and recreate from scratch
+        from sqlalchemy import select, delete
+        print("=== DELETING ALL EXISTING DATA ===")
+        await db.execute(delete(Attendance))
+        await db.execute(delete(StudentClassRelationship))
+        await db.execute(delete(TeacherClassAssignment))
+        await db.execute(delete(StudentParentRelationship))
+        await db.execute(delete(Subject))
+        await db.execute(delete(ClassModel))
+        await db.execute(delete(Student))
+        await db.execute(delete(Parent))
+        await db.execute(delete(Teacher))
+        await db.execute(delete(School))
+        await db.execute(delete(User))
         await db.commit()
-        print("=== PASSWORD UPDATE COMPLETE ===")
+        print("=== ALL DATA DELETED ===")
         
-        # Check if school already exists (indicates seed already run)
-        result = await db.execute(select(School).limit(1))
-        if result.scalar_one_or_none():
-            print("Database already seeded, skipping data creation...")
-            return
-        # Create school
-        school = School(
-            id=str(uuid.uuid4()),
-            name="Greenwood International Academy",
-            code="GIA",
-            address="123 Education Lane, Academic City",
-            phone="+91 1234567890",
-            email="contact@greenwood.edu",
-            academic_year="2026-2027"
-        )
-        db.add(school)
-        await db.flush()
+        # Recreate all data from scratch
+        print("=== CREATING FRESH DATA ===")
         
-        # Create users and profiles
         # Principal
         principal_user = User(
             id=str(uuid.uuid4()),
@@ -71,7 +48,7 @@ async def seed_database():
         )
         db.add(principal_user)
         await db.flush()
-        school.principal_id = principal_user.id
+        print(f"✓ Created principal with password admin123")
         
         # Teacher
         teacher_user = User(
@@ -85,19 +62,7 @@ async def seed_database():
         )
         db.add(teacher_user)
         await db.flush()
-        
-        teacher = Teacher(
-            id=str(uuid.uuid4()),
-            user_id=teacher_user.id,
-            employee_id="TCH8801",
-            phone="+91 98111 22334",
-            qualification="M.Sc Mathematics",
-            designation="Senior Teacher",
-            department="Science & Math",
-            joining_date=date(2020, 6, 1)
-        )
-        db.add(teacher)
-        await db.flush()
+        print(f"✓ Created teacher with password teacher123")
         
         # Student 1
         student1_user = User(
@@ -111,18 +76,7 @@ async def seed_database():
         )
         db.add(student1_user)
         await db.flush()
-        
-        student1 = Student(
-            id=str(uuid.uuid4()),
-            user_id=student1_user.id,
-            roll_number="24",
-            admission_number="ADM2026001",
-            date_of_birth=date(2010, 5, 15),
-            blood_group="O+",
-            address="45 Student Street, City"
-        )
-        db.add(student1)
-        await db.flush()
+        print(f"✓ Created student rahul.sharma@greenwood.edu with password student123")
         
         # Student 2
         student2_user = User(
@@ -136,18 +90,7 @@ async def seed_database():
         )
         db.add(student2_user)
         await db.flush()
-        
-        student2 = Student(
-            id=str(uuid.uuid4()),
-            user_id=student2_user.id,
-            roll_number="25",
-            admission_number="ADM2026002",
-            date_of_birth=date(2010, 8, 20),
-            blood_group="A+",
-            address="56 Student Avenue, City"
-        )
-        db.add(student2)
-        await db.flush()
+        print(f"✓ Created student sneha.patel@greenwood.edu with password student123")
         
         # Parent
         parent_user = User(
@@ -161,7 +104,70 @@ async def seed_database():
         )
         db.add(parent_user)
         await db.flush()
+        print(f"✓ Created parent with password parent123")
         
+        await db.commit()
+        print("=== USER CREATION COMPLETE ===")
+        
+        # Create school
+        school = School(
+            id=str(uuid.uuid4()),
+            name="Greenwood International Academy",
+            code="GIA",
+            address="123 Education Lane, Academic City",
+            phone="+91 1234567890",
+            email="contact@greenwood.edu",
+            academic_year="2026-2027"
+        )
+        db.add(school)
+        await db.flush()
+        school.principal_id = principal_user.id
+        print("✓ Created school")
+        
+        # Teacher profile
+        teacher = Teacher(
+            id=str(uuid.uuid4()),
+            user_id=teacher_user.id,
+            employee_id="TCH8801",
+            phone="+91 98111 22334",
+            qualification="M.Sc Mathematics",
+            designation="Senior Teacher",
+            department="Science & Math",
+            joining_date=date(2020, 6, 1)
+        )
+        db.add(teacher)
+        await db.flush()
+        print("✓ Created teacher profile")
+        
+        # Student 1 profile
+        student1 = Student(
+            id=str(uuid.uuid4()),
+            user_id=student1_user.id,
+            roll_number="24",
+            admission_number="ADM2026001",
+            date_of_birth=date(2010, 5, 15),
+            blood_group="O+",
+            address="45 Student Street, City"
+        )
+        db.add(student1)
+        await db.flush()
+        print("✓ Created student 1 profile")
+        
+        # Student 2 profile
+        student2 = Student(
+            id=str(uuid.uuid4()),
+            user_id=student2_user.id,
+            roll_number="25",
+            admission_number="ADM2026002",
+            date_of_birth=date(2010, 8, 20),
+            blood_group="A+",
+            address="56 Student Avenue, City"
+        )
+        db.add(student2)
+        await db.flush()
+        print("✓ Created student 2 profile")
+        
+        # Parent profile
         parent = Parent(
             id=str(uuid.uuid4()),
             user_id=parent_user.id,
@@ -170,8 +176,9 @@ async def seed_database():
         )
         db.add(parent)
         await db.flush()
+        print("✓ Created parent profile")
         
-        # Create parent-child relationship
+        # Parent-child relationship
         parent_child = StudentParentRelationship(
             id=str(uuid.uuid4()),
             student_id=student1.id,
@@ -180,8 +187,9 @@ async def seed_database():
             is_primary_contact=True
         )
         db.add(parent_child)
+        print("✓ Created parent-child relationship")
         
-        # Create class
+        # Class
         class_10a = ClassModel(
             id=str(uuid.uuid4()),
             school_id=school.id,
@@ -193,8 +201,9 @@ async def seed_database():
         )
         db.add(class_10a)
         await db.flush()
+        print("✓ Created class")
         
-        # Create subject
+        # Subject
         math_subject = Subject(
             id=str(uuid.uuid4()),
             name="Mathematics",
@@ -202,8 +211,9 @@ async def seed_database():
             description="Mathematics for Grade 10"
         )
         db.add(math_subject)
+        print("✓ Created subject")
         
-        # Assign students to class
+        # Student-class relationships
         student1_class = StudentClassRelationship(
             id=str(uuid.uuid4()),
             student_id=student1.id,
@@ -221,8 +231,9 @@ async def seed_database():
             roll_number_in_class="25"
         )
         db.add(student2_class)
+        print("✓ Created student-class relationships")
         
-        # Assign teacher to class
+        # Teacher-class assignment
         teacher_class = TeacherClassAssignment(
             id=str(uuid.uuid4()),
             teacher_id=teacher.id,
@@ -231,18 +242,14 @@ async def seed_database():
             academic_year="2026-2027"
         )
         db.add(teacher_class)
+        print("✓ Created teacher-class assignment")
         
-        # Create attendance records for student 1
-        # Generate attendance for the last 3 months
+        # Attendance records
         today = date.today()
         for day_offset in range(90, 0, -1):
             attendance_date = today - timedelta(days=day_offset)
-            
-            # Skip weekends
             if attendance_date.weekday() >= 5:
                 continue
-            
-            # Random attendance status (mostly present)
             import random
             rand = random.random()
             if rand < 0.85:
@@ -265,13 +272,10 @@ async def seed_database():
             )
             db.add(attendance)
         
-        # Create attendance records for student 2
         for day_offset in range(90, 0, -1):
             attendance_date = today - timedelta(days=day_offset)
-            
             if attendance_date.weekday() >= 5:
                 continue
-            
             import random
             rand = random.random()
             if rand < 0.92:
@@ -291,10 +295,10 @@ async def seed_database():
                 remarks="Daily attendance"
             )
             db.add(attendance)
+        print("✓ Created attendance records")
         
         await db.commit()
-        
-        print("Database seeded successfully!")
+        print("=== DATABASE SEEDED SUCCESSFULLY ===")
         print("\nDemo Credentials:")
         print("=================")
         print("Principal:")
