@@ -1,0 +1,6 @@
+{
+  "name": "XYZ AI — Human-Like AI School Assistant",
+  "description": "An intelligent, multi-role conversational assistant for students, parents, teachers, and school management with real-time ERP integration readiness.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
