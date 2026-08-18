@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Lock, UserCheck, ShieldAlert, GraduationCap, Users, BookOpen, Building2 } from 'lucide-react';
+import { X, Lock, UserCheck, ShieldAlert, GraduationCap, Users, BookOpen, Building2, Play } from 'lucide-react';
 import { UserRole } from '../../types/auth';
 import { useAuth } from '../../state/AuthContext';
+import { authApi } from '../../api/auth';
 import { cn } from '../../utils/cn';
 
 interface AuthModalProps {
@@ -82,6 +83,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       if (onSuccess) {
         onSuccess();
       }
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setLocalError(null);
+    clearError();
+
+    try {
+      const response = await authApi.demoLogin(selectedRole);
+      // Store token and user data
+      if (typeof window !== 'undefined') {
+        const token = (response as any).token?.access_token || (response as any).token;
+        localStorage.setItem('xyz_auth_token', token);
+        localStorage.setItem('xyz_user_profile', JSON.stringify((response as any).user));
+      }
+      onClose();
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error: any) {
+      setLocalError(error.response?.data?.detail || 'Demo login failed');
     }
   };
 
@@ -189,10 +211,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div className="flex gap-2 pt-1">
             <button
               type="button"
-              onClick={onClose}
-              className="w-1/3 py-2.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+              onClick={handleDemoLogin}
+              className="w-1/3 py-2.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-xl shadow-md shadow-green-500/20 transition-all duration-150 flex items-center justify-center space-x-2 cursor-pointer"
             >
-              Cancel
+              <Play className="w-4 h-4" />
+              <span>Demo</span>
             </button>
             <button
               type="submit"

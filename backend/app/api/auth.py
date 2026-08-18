@@ -5,11 +5,19 @@ from app.db import get_db
 from app.schemas.auth import LoginRequest, LoginResponse, UserResponse, TokenResponse
 from app.services.auth_service import AuthService
 from app.security.dependencies import get_current_user
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.services.audit_service import AuditService
 from app.models.audit_log import AuditAction
 
 router = APIRouter()
+
+# Demo user credentials mapping
+DEMO_USERS = {
+    UserRole.STUDENT: {"email": "demo.student@greenwood.edu", "password": "demo123"},
+    UserRole.PARENT: {"email": "demo.parent@greenwood.edu", "password": "demo123"},
+    UserRole.TEACHER: {"email": "demo.teacher@greenwood.edu", "password": "demo123"},
+    UserRole.PRINCIPAL: {"email": "demo.principal@greenwood.edu", "password": "demo123"},
+}
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -112,3 +120,63 @@ async def logout(
     )
     
     return {"success": True, "message": "Logged out successfully"}
+
+
+@router.post("/demo-login", response_model=LoginResponse)
+async def demo_login(
+    role: UserRole,
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
+    """Demo login for testing without credentials."""
+    if role not in DEMO_USERS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid demo role: {role}"
+        )
+    
+    demo_creds = DEMO_USERS[role]
+    auth_service = AuthService(db)
+    audit_service = AuditService(db)
+    
+    try:
+        user, access_token = await auth_service.authenticate_user(
+            demo_creds["email"],
+            demo_creds["password"]
+        )
+        
+        # Log successful demo login
+        try:
+            await audit_service.log_action(
+                user_id=user.id,
+                user_role=user.role.value,
+                action=AuditAction.LOGIN,
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+                success=True,
+                details={"demo_login": True}
+            )
+        except Exception as audit_error:
+            print(f"Audit log failed: {audit_error}")
+        
+        return LoginResponse(
+            token=TokenResponse(
+                access_token=access_token,
+                token_type="bearer",
+                expires_in=3600
+            ),
+            user=UserResponse(
+                id=user.id,
+                email=user.email,
+                username=user.username,
+                full_name=user.full_name,
+                role=user.role,
+                is_active=user.is_active
+            )
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Demo login failed: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"}
+        )

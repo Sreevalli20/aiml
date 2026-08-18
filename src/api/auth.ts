@@ -16,6 +16,17 @@ export const authApi = {
   },
 
   /**
+   * Demo login for testing without credentials.
+   */
+  async demoLogin(role: string): Promise<AuthResponse> {
+    const res = await apiClient.post<ApiResponse<AuthResponse> | AuthResponse>('/api/v1/auth/demo-login', { role });
+    if ('data' in res && res.data) {
+      return res.data;
+    }
+    return res as AuthResponse;
+  },
+
+  /**
    * Fetch authenticated user's profile and verified role from JWT token.
    */
   async getMe(): Promise<UserProfile> {
