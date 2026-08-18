@@ -16,51 +16,40 @@ from app.security.password import get_password_hash
 async def seed_database():
     """Seed the database with sample data for development."""
     async with AsyncSessionLocal() as db:
-        # Simple approach: Update existing user passwords or create new users
-        from sqlalchemy import select
-        print("=== CHECKING AND UPDATING USERS ===")
-        
-        users_to_ensure = [
-            ("principal@greenwood.edu", "principal", "admin123", "Dr. Ramesh Mehta", UserRole.PRINCIPAL),
-            ("anjali.rao@greenwood.edu", "anjali.rao", "teacher123", "Mrs. Anjali Rao", UserRole.TEACHER),
-            ("rahul.sharma@greenwood.edu", "rahul.sharma", "student123", "Rahul Sharma", UserRole.STUDENT),
-            ("sneha.patel@greenwood.edu", "sneha.patel", "student123", "Sneha Patel", UserRole.STUDENT),
-            ("alok.sharma@gmail.com", "alok.sharma", "parent123", "Mr. Alok Sharma", UserRole.PARENT),
-        ]
-        
-        for email, username, password, full_name, role in users_to_ensure:
-            try:
-                result = await db.execute(select(User).where(User.email == email))
-                user = result.scalar_one_or_none()
-                
-                if user:
-                    # Update existing user
-                    user.hashed_password = get_password_hash(password)
-                    user.is_active = True
-                    print(f"✓ Updated password for {email}")
-                else:
-                    # Create new user
-                    new_user = User(
-                        id=str(uuid.uuid4()),
-                        email=email,
-                        username=username,
-                        hashed_password=get_password_hash(password),
-                        full_name=full_name,
-                        role=role,
-                        is_active=True
-                    )
-                    db.add(new_user)
-                    print(f"✓ Created new user {email}")
-            except Exception as e:
-                print(f"✗ Error processing {email}: {e}")
+        # Force delete and recreate demo user to ensure correct password
+        from sqlalchemy import select, delete
+        print("=== FORCE RECREATING DEMO USER ===")
         
         try:
+            # Delete existing demo user if exists
+            await db.execute(delete(User).where(User.email == "rahul.sharma@greenwood.edu"))
             await db.commit()
-            print("=== USER PASSWORD UPDATE COMPLETE ===")
+            print("✓ Deleted existing demo user")
         except Exception as e:
-            print(f"✗ Commit failed: {e}")
+            print(f"✗ Delete failed (may not exist): {e}")
+            await db.rollback()
+        
+        try:
+            # Create fresh demo user
+            new_user = User(
+                id=str(uuid.uuid4()),
+                email="rahul.sharma@greenwood.edu",
+                username="rahul.sharma",
+                hashed_password=get_password_hash("student123"),
+                full_name="Rahul Sharma",
+                role=UserRole.STUDENT,
+                is_active=True
+            )
+            db.add(new_user)
+            await db.commit()
+            print(f"✓ Created demo user: rahul.sharma@greenwood.edu")
+            print(f"✓ Password hash: {new_user.hashed_password[:50]}...")
+        except Exception as e:
+            print(f"✗ Create failed: {e}")
             await db.rollback()
             raise
+        
+        print("=== DEMO USER SETUP COMPLETE ===")
         
         # Check if school already exists (indicates seed already run)
         result = await db.execute(select(School).limit(1))
