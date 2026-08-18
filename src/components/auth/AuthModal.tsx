@@ -182,7 +182,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {/* Security notice */}
           <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-100 text-[11px] text-slate-600 leading-relaxed">
             <span className="font-bold text-blue-700">Security Architecture: </span>
-            This client calls <code className="text-blue-800 font-mono font-semibold">POST /api/auth/login</code>. Role verification and resource authorization are strictly validated by the backend.
+            This client calls <code className="text-blue-800 font-mono font-semibold">POST /api/v1/auth/login</code>. Role verification and resource authorization are strictly validated by the backend.
           </div>
 
           {/* Submit */}

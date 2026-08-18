@@ -27,7 +27,7 @@ interface EndpointDoc {
 export const API_ENDPOINTS: EndpointDoc[] = [
   {
     method: 'POST',
-    path: '/api/auth/login',
+    path: '/api/v1/auth/login',
     category: 'Authentication',
     description: 'Authenticate user credentials with school ERP database and receive JWT access token.',
     authRequired: false,
@@ -54,7 +54,7 @@ export const API_ENDPOINTS: EndpointDoc[] = [
   },
   {
     method: 'GET',
-    path: '/api/auth/me',
+    path: '/api/v1/auth/me',
     category: 'Authentication',
     description: 'Fetch current authenticated user profile and cryptographically verified role permissions.',
     authRequired: true,
@@ -71,7 +71,7 @@ export const API_ENDPOINTS: EndpointDoc[] = [
   },
   {
     method: 'POST',
-    path: '/api/chat',
+    path: '/api/v1/chat',
     category: 'Conversations & Chat',
     description: 'Send user prompt to the AI agent orchestration layer. Maintains multi-turn context via conversation_id.',
     authRequired: true,
@@ -95,7 +95,7 @@ export const API_ENDPOINTS: EndpointDoc[] = [
   },
   {
     method: 'GET',
-    path: '/api/conversations',
+    path: '/api/v1/chat/conversations',
     category: 'Conversations & Chat',
     description: 'List user conversation histories with timestamps and summaries.',
     authRequired: true,
@@ -114,7 +114,7 @@ export const API_ENDPOINTS: EndpointDoc[] = [
   },
   {
     method: 'GET',
-    path: '/api/conversations/{conversation_id}',
+    path: '/api/v1/chat/conversations/{conversation_id}',
     category: 'Conversations & Chat',
     description: 'Retrieve full message transcript and action cards for a specific conversation.',
     authRequired: true,
@@ -138,7 +138,7 @@ export const API_ENDPOINTS: EndpointDoc[] = [
   },
   {
     method: 'GET',
-    path: '/api/attendance/me',
+    path: '/api/v1/attendance/me',
     category: 'Attendance',
     description: 'Fetch student personal attendance statistics for the current academic session.',
     authRequired: true,
@@ -159,7 +159,7 @@ export const API_ENDPOINTS: EndpointDoc[] = [
   },
   {
     method: 'GET',
-    path: '/api/attendance/child/{child_id}',
+    path: '/api/v1/attendance/child/{child_id}',
     category: 'Attendance',
     description: 'Fetch attendance records for a specific child (authorized parent only).',
     authRequired: true,
@@ -178,7 +178,7 @@ export const API_ENDPOINTS: EndpointDoc[] = [
   },
   {
     method: 'POST',
-    path: '/api/attendance/mark',
+    path: '/api/v1/attendance/mark',
     category: 'Attendance',
     description: 'Teacher mutation to mark/update daily student attendance in the school register.',
     authRequired: true,
@@ -199,7 +199,7 @@ export const API_ENDPOINTS: EndpointDoc[] = [
   },
   {
     method: 'GET',
-    path: '/api/attendance/analytics',
+    path: '/api/v1/attendance/analytics',
     category: 'Attendance',
     description: 'School-wide attendance analytics, distributions, and trend metrics for School Management & Principal.',
     authRequired: true,
@@ -326,8 +326,8 @@ export const ApiDocsViewer: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [expandedEndpoints, setExpandedEndpoints] = useState<Record<string, boolean>>({
-    'POST /api/chat': true,
-    'POST /api/auth/login': true
+    'POST /api/v1/chat': true,
+    'POST /api/v1/auth/login': true
   });
 
   const categories = ['All', 'Authentication', 'Conversations & Chat', 'Attendance', 'ERP Entities', 'Human Support', 'Voice Processing'];

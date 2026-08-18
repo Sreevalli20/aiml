@@ -61,7 +61,7 @@ export const RightPanelWrapper: React.FC<RightPanelWrapperProps> = ({
             API Integration Scoped
           </p>
           <p className="text-[10px] leading-relaxed text-blue-600">
-            Frontend is fully connected to backend contracts via <code className="font-mono font-semibold">/api/attendance</code> and <code className="font-mono font-semibold">/api/chat</code>.
+            Frontend is fully connected to backend contracts via <code className="font-mono font-semibold">/api/v1/attendance</code> and <code className="font-mono font-semibold">/api/v1/chat</code>.
           </p>
         </div>
       </div>

@@ -226,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {conversations.length === 0 ? (
               <div className="px-3 py-2.5 rounded-lg bg-slate-900/60 border border-slate-800/80 text-center">
                 <p className="text-[11px] text-slate-400">No past conversations</p>
-                <p className="text-[9px] text-slate-500 mt-0.5">Loaded via <code className="font-mono">/api/conversations</code></p>
+                <p className="text-[9px] text-slate-500 mt-0.5">Loaded via <code className="font-mono">/api/v1/chat/conversations</code></p>
               </div>
             ) : (
               <div className="space-y-1 max-h-40 overflow-y-auto">

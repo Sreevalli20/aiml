@@ -23,10 +23,10 @@ export const ApiDiagnosticsModal: React.FC<ApiDiagnosticsModalProps> = ({ isOpen
   const [customBaseUrl, setCustomBaseUrl] = useState(API_CONFIG.baseUrl);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [testResults, setTestResults] = useState<Record<string, EndpointCheckResult>>({
-    health: { endpoint: '/api/health', method: 'GET', status: 'idle' },
-    auth: { endpoint: '/api/auth/me', method: 'GET', status: 'idle' },
-    conversations: { endpoint: '/api/conversations', method: 'GET', status: 'idle' },
-    attendance: { endpoint: '/api/attendance/me', method: 'GET', status: 'idle' },
+    health: { endpoint: '/api/v1/health', method: 'GET', status: 'idle' },
+    auth: { endpoint: '/api/v1/auth/me', method: 'GET', status: 'idle' },
+    conversations: { endpoint: '/api/v1/chat/conversations', method: 'GET', status: 'idle' },
+    attendance: { endpoint: '/api/v1/attendance/me', method: 'GET', status: 'idle' },
   });
 
   if (!isOpen) return null;

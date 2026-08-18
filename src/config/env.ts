@@ -7,14 +7,22 @@
  */
 
 const getInitialBaseUrl = (): string => {
-  // Check localStorage runtime override first
+  // Check build-time environment variable first (production authoritative)
+  const metaEnv = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
+  const buildTimeUrl = (metaEnv?.VITE_API_BASE_URL || '').trim();
+  
+  // If build-time URL is configured, use it (production deployment)
+  if (buildTimeUrl) {
+    return buildTimeUrl;
+  }
+  
+  // Only use localStorage override for development when no build-time URL is set
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem('xyz_api_base_url');
     if (saved) return saved.trim();
   }
-  // Fallback to build-time environment variable or default empty
-  const metaEnv = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
-  return (metaEnv?.VITE_API_BASE_URL || '').trim();
+  
+  return '';
 };
 
 export const API_CONFIG = {
