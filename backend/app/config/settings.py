@@ -7,6 +7,16 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/xyz_ai"
     
+    @property
+    def async_database_url(self) -> str:
+        """Ensure DATABASE_URL uses asyncpg driver for SQLAlchemy async."""
+        url = self.database_url
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        return url
+    
     # JWT Security
     jwt_secret: str = "your-super-secret-jwt-key-change-this-in-production"
     jwt_algorithm: str = "HS256"
@@ -26,7 +36,7 @@ class Settings(BaseSettings):
     # Application
     app_name: str = "XYZ AI School Assistant"
     app_version: str = "1.0.0"
-    debug: bool = True
+    debug: bool = False
     
     class Config:
         env_file = ".env"
