@@ -141,11 +141,12 @@ async def demo_login(
     
     # If no user exists, create a demo user
     if not user:
-        import bcrypt
+        from passlib.context import CryptContext
         from app.models.user import UserRole
         
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         demo_password = "demo123"
-        hashed_password = bcrypt.hashpw(demo_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        hashed_password = pwd_context.hash(demo_password)
         
         user_id = str(uuid.uuid4())
         role_str = request_data.role.value
