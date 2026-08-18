@@ -19,8 +19,26 @@ async def seed_database():
         # Check if school already exists (indicates seed already run)
         from sqlalchemy import select
         result = await db.execute(select(School).limit(1))
-        if result.scalar_one_or_none():
-            print("Database already seeded, skipping...")
+        existing_school = result.scalar_one_or_none()
+        if existing_school:
+            print("Database already seeded, updating user passwords...")
+            # Update existing user passwords to ensure they match
+            from sqlalchemy import update
+            users_to_update = [
+                ("principal@greenwood.edu", "admin123"),
+                ("anjali.rao@greenwood.edu", "teacher123"),
+                ("rahul.sharma@greenwood.edu", "student123"),
+                ("sneha.patel@greenwood.edu", "student123"),
+                ("alok.sharma@gmail.com", "parent123"),
+            ]
+            for email, password in users_to_update:
+                result = await db.execute(select(User).where(User.email == email))
+                user = result.scalar_one_or_none()
+                if user:
+                    user.hashed_password = get_password_hash(password)
+                    print(f"Updated password for {email}")
+            await db.commit()
+            print("Password updates completed!")
             return
         # Create school
         school = School(
