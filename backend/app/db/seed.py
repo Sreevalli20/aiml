@@ -16,6 +16,12 @@ from app.security.password import get_password_hash
 async def seed_database():
     """Seed the database with sample data for development."""
     async with AsyncSessionLocal() as db:
+        # Check if school already exists (indicates seed already run)
+        from sqlalchemy import select
+        result = await db.execute(select(School).limit(1))
+        if result.scalar_one_or_none():
+            print("Database already seeded, skipping...")
+            return
         # Create school
         school = School(
             id=str(uuid.uuid4()),
