@@ -24,13 +24,21 @@ class AuthService:
         user = await self.user_repo.get_by_identifier(identifier)
         
         if not user:
+            print(f"AUTH FAIL: User not found for identifier: {identifier}")
             raise AuthorizationError("Invalid credentials", "INVALID_CREDENTIALS")
         
+        print(f"AUTH DEBUG: Found user {user.email}, is_active={user.is_active}, role={user.role}")
+        print(f"AUTH DEBUG: Hash length={len(user.hashed_password)}, hash_prefix={user.hashed_password[:30]}...")
+        
         if not verify_password(password, user.hashed_password):
+            print(f"AUTH FAIL: Password verification failed for {user.email}")
             raise AuthorizationError("Invalid credentials", "INVALID_CREDENTIALS")
         
         if not user.is_active:
+            print(f"AUTH FAIL: User {user.email} is inactive")
             raise AuthorizationError("Account is inactive", "ACCOUNT_INACTIVE")
+        
+        print(f"AUTH SUCCESS: User {user.email} authenticated")
         
         # Create access token
         access_token = create_access_token(
