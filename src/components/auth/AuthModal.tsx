@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { X, Lock, UserCheck, ShieldAlert, GraduationCap, Users, BookOpen, Building2, Play } from 'lucide-react';
+import { X, Lock, UserCheck, ShieldAlert, GraduationCap, Users, BookOpen, Building2 } from 'lucide-react';
 import { UserRole } from '../../types/auth';
 import { useAuth } from '../../state/AuthContext';
-import { authApi } from '../../api/auth';
 import { cn } from '../../utils/cn';
 
 interface AuthModalProps {
@@ -23,6 +22,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [identifier, setIdentifier] = useState('STU2026042');
   const [password, setPassword] = useState('pass123');
   const [localError, setLocalError] = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   if (!isOpen) return null;
 
@@ -69,6 +69,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLocalError(null);
     clearError();
 
+    if (isDemoMode) {
+      // Demo login - no password required
+      const success = await login({
+        identifier: '',
+        password: '',
+        roleHint: selectedRole,
+        isDemo: true
+      });
+      if (success) {
+        onClose();
+        if (onSuccess) {
+          onSuccess();
+        }
+      }
+      return;
+    }
+
     const idToUse = identifier.trim() || roleConfigs[selectedRole].defaultId;
     const pwdToUse = password || 'pass123';
 
@@ -83,27 +100,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       if (onSuccess) {
         onSuccess();
       }
-    }
-  };
-
-  const handleDemoLogin = async () => {
-    setLocalError(null);
-    clearError();
-
-    try {
-      const response = await authApi.demoLogin(selectedRole);
-      // Store token and user data
-      if (typeof window !== 'undefined') {
-        const token = (response as any).token?.access_token || (response as any).token;
-        localStorage.setItem('xyz_auth_token', token);
-        localStorage.setItem('xyz_user_profile', JSON.stringify((response as any).user));
-      }
-      onClose();
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (error: any) {
-      setLocalError(error.response?.data?.detail || 'Demo login failed');
     }
   };
 
@@ -130,6 +126,49 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Demo Login Section */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+              Quick Demo Access
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {(Object.keys(roleConfigs) as UserRole[]).map((r) => {
+                const config = roleConfigs[r];
+                const Icon = config.icon;
+                return (
+                  <button
+                    key={`demo-${r}`}
+                    type="button"
+                    onClick={() => {
+                      setSelectedRole(r);
+                      setIsDemoMode(true);
+                      clearError();
+                    }}
+                    className={cn(
+                      'flex items-center space-x-2 p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer',
+                      isDemoMode && selectedRole === r
+                        ? 'bg-green-50 border-green-500 text-green-700 shadow-2xs font-semibold'
+                        : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    )}
+                  >
+                    <Icon className={cn('w-4 h-4 shrink-0', isDemoMode && selectedRole === r ? 'text-green-600' : 'text-slate-400')} />
+                    <span className="text-xs">Continue as {config.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200"></div>
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-2 bg-white text-slate-500">or login with credentials</span>
+            </div>
+          </div>
+
           {/* Role selector tab */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
@@ -139,13 +178,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {(Object.keys(roleConfigs) as UserRole[]).map((r) => {
                 const config = roleConfigs[r];
                 const Icon = config.icon;
-                const isSelected = selectedRole === r;
+                const isSelected = selectedRole === r && !isDemoMode;
                 return (
                   <button
                     key={r}
                     type="button"
                     onClick={() => {
                       handleRoleChange(r);
+                      setIsDemoMode(false);
                     }}
                     className={cn(
                       'flex items-center space-x-2 p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer',
@@ -162,36 +202,41 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           </div>
 
-          {/* Identifier Input */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              School ID / Registered Email / Phone
-            </label>
-            <input
-              type="text"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              placeholder={roleConfigs[selectedRole].placeholder}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all font-medium"
-            />
-            <p className="text-[11px] text-slate-500 mt-1">
-              {roleConfigs[selectedRole].helper}
-            </p>
-          </div>
+          {/* Credential Inputs - only show in non-demo mode */}
+          {!isDemoMode && (
+            <>
+              {/* Identifier Input */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  School ID / Registered Email / Phone
+                </label>
+                <input
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder={roleConfigs[selectedRole].placeholder}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all font-medium"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  {roleConfigs[selectedRole].helper}
+                </p>
+              </div>
 
-          {/* Password Input */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Password or Access Token
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all font-medium"
-            />
-          </div>
+              {/* Password Input */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Password or Access Token
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all font-medium"
+                />
+              </div>
+            </>
+          )}
 
           {/* Error notice */}
           {(localError || authError) && (
@@ -211,11 +256,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div className="flex gap-2 pt-1">
             <button
               type="button"
-              onClick={handleDemoLogin}
-              className="w-1/3 py-2.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-xl shadow-md shadow-green-500/20 transition-all duration-150 flex items-center justify-center space-x-2 cursor-pointer"
+              onClick={onClose}
+              className="w-1/3 py-2.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
             >
-              <Play className="w-4 h-4" />
-              <span>Demo</span>
+              Cancel
             </button>
             <button
               type="submit"

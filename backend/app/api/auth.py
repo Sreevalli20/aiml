@@ -2,22 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
-from app.schemas.auth import LoginRequest, LoginResponse, UserResponse, TokenResponse
+from app.schemas.auth import LoginRequest, LoginResponse, UserResponse, TokenResponse, DemoLoginRequest
 from app.services.auth_service import AuthService
 from app.security.dependencies import get_current_user
-from app.models.user import User, UserRole
+from app.models.user import User
 from app.services.audit_service import AuditService
 from app.models.audit_log import AuditAction
 
 router = APIRouter()
-
-# Demo user credentials mapping
-DEMO_USERS = {
-    UserRole.STUDENT: {"email": "demo.student@greenwood.edu", "password": "demo123"},
-    UserRole.PARENT: {"email": "demo.parent@greenwood.edu", "password": "demo123"},
-    UserRole.TEACHER: {"email": "demo.teacher@greenwood.edu", "password": "demo123"},
-    UserRole.PRINCIPAL: {"email": "demo.principal@greenwood.edu", "password": "demo123"},
-}
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -124,59 +116,66 @@ async def logout(
 
 @router.post("/demo-login", response_model=LoginResponse)
 async def demo_login(
-    role: UserRole,
+    request_data: DemoLoginRequest,
     request: Request,
     db: AsyncSession = Depends(get_db)
 ):
-    """Demo login for testing without credentials."""
-    if role not in DEMO_USERS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid demo role: {role}"
-        )
+    """Demo login without password - finds an existing sample user for the role."""
+    from sqlalchemy import select
+    from app.security.jwt import create_access_token
+    from datetime import timedelta
+    from app.config import settings
     
-    demo_creds = DEMO_USERS[role]
     auth_service = AuthService(db)
     audit_service = AuditService(db)
     
-    try:
-        user, access_token = await auth_service.authenticate_user(
-            demo_creds["email"],
-            demo_creds["password"]
-        )
-        
-        # Log successful demo login
-        try:
-            await audit_service.log_action(
-                user_id=user.id,
-                user_role=user.role.value,
-                action=AuditAction.LOGIN,
-                ip_address=request.client.host if request.client else None,
-                user_agent=request.headers.get("user-agent"),
-                success=True,
-                details={"demo_login": True}
-            )
-        except Exception as audit_error:
-            print(f"Audit log failed: {audit_error}")
-        
-        return LoginResponse(
-            token=TokenResponse(
-                access_token=access_token,
-                token_type="bearer",
-                expires_in=3600
-            ),
-            user=UserResponse(
-                id=user.id,
-                email=user.email,
-                username=user.username,
-                full_name=user.full_name,
-                role=user.role,
-                is_active=user.is_active
-            )
-        )
-    except Exception as e:
+    # Find an existing active user with the requested role
+    result = await db.execute(
+        select(User)
+        .where(User.role == request_data.role)
+        .where(User.is_active == True)
+        .limit(1)
+    )
+    user = result.scalar_one_or_none()
+    
+    if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Demo login failed: {str(e)}",
-            headers={"WWW-Authenticate": "Bearer"}
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No demo user found for role: {request_data.role.value}"
         )
+    
+    # Create access token using existing JWT creation logic
+    access_token = create_access_token(
+        data={"sub": user.id, "role": user.role.value},
+        expires_delta=timedelta(minutes=settings.jwt_access_token_expire_minutes)
+    )
+    
+    # Log successful demo login (non-blocking)
+    try:
+        await audit_service.log_action(
+            user_id=user.id,
+            user_role=user.role.value,
+            action=AuditAction.LOGIN,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            success=True,
+            details={"demo_login": True}
+        )
+    except Exception as audit_error:
+        print(f"Audit log failed: {audit_error}")
+    
+    return LoginResponse(
+        token=TokenResponse(
+            access_token=access_token,
+            token_type="bearer",
+            expires_in=3600
+        ),
+        user=UserResponse(
+            id=user.id,
+            email=user.email,
+            username=user.username,
+            full_name=user.full_name,
+            role=user.role,
+            is_active=user.is_active
+        )
+    )

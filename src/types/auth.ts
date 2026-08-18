@@ -17,6 +17,7 @@ export interface LoginCredentials {
   password?: string;
   roleHint?: UserRole;
   otp?: string;
+  isDemo?: boolean;
 }
 
 export interface AuthResponse {
@@ -24,4 +25,7 @@ export interface AuthResponse {
   refreshToken?: string;
   user: UserProfile;
   expiresIn?: number;
+  access_token?: string;
+  token_type?: string;
+  expires_in?: number;
 }

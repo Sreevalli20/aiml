@@ -221,7 +221,8 @@ class AIOrchestrator:
                 temperature=0.7
             )
             return response
-        except Exception:
+        except Exception as e:
+            print(f"LLM unavailable, using fallback: {e}")
             # Fallback to heuristic response
             return self._get_fallback_response(user_role, language)
     

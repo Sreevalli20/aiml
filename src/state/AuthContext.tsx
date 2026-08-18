@@ -84,10 +84,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setAuthError(null);
     try {
-      const resp = await authApi.login(credentials);
-      if (resp && resp.token) {
-        localStorage.setItem('xyz_auth_token', resp.token);
-        setToken(resp.token);
+      let resp;
+      if (credentials.isDemo) {
+        // Use demo login endpoint
+        resp = await authApi.demoLogin(credentials.roleHint || 'student');
+      } else {
+        // Use regular login endpoint
+        resp = await authApi.login(credentials);
+      }
+      
+      if (resp && (resp.token || resp.access_token)) {
+        const token = resp.token || resp.access_token || '';
+        if (token) {
+          localStorage.setItem('xyz_auth_token', token);
+          setToken(token);
+        }
         if (resp.user) {
           localStorage.setItem('xyz_user_profile', JSON.stringify(resp.user));
           setUser(resp.user);

@@ -38,3 +38,7 @@ class TokenResponse(BaseModel):
 class LoginResponse(BaseModel):
     token: TokenResponse
     user: UserResponse
+
+
+class DemoLoginRequest(BaseModel):
+    role: UserRole
