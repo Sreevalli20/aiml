@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
-from app.schemas.auth import LoginRequest, LoginResponse, UserResponse
+from app.schemas.auth import LoginRequest, LoginResponse, UserResponse, TokenResponse
 from app.services.auth_service import AuthService
 from app.security.dependencies import get_current_user
 from app.models.user import User
@@ -43,7 +43,11 @@ async def login(
             print(f"Audit log failed: {audit_error}")
         
         return LoginResponse(
-            token={"access_token": access_token, "token_type": "bearer", "expires_in": 3600},
+            token=TokenResponse(
+                access_token=access_token,
+                token_type="bearer",
+                expires_in=3600
+            ),
             user=UserResponse(
                 id=user.id,
                 email=user.email,
