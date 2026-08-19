@@ -15,7 +15,10 @@ class AIOrchestrator:
     
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.llm_client = LLMClient()
+        try:
+            self.llm_client = LLMClient()
+        except Exception:
+            self.llm_client = None
         self.tool_registry = get_tool_registry()
         self.conversation_repo = ConversationRepository(db)
     
