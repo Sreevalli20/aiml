@@ -3,7 +3,7 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "env": {
-    "VITE_API_BASE_URL": "https://xyz-ai-backend-gu7m.onrender.com/api/v1"
+    "VITE_API_BASE_URL": "https://xyz-ai-backend-gu7m.onrender.com"
   },
   "git": {
     "deploymentEnabled": {
