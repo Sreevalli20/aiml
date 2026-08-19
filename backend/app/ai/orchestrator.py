@@ -25,14 +25,12 @@ class AIOrchestrator:
         user_role: UserRole,
         message: str,
         conversation_id: Optional[str] = None,
-        language: str = "en"
+        language: str = "en",
+        is_demo_user: bool = False
     ) -> dict:
         """Process a user message through the AI orchestration pipeline."""
         
         # Check for demo user (in-memory user without database record)
-        # Demo users have emails ending with @xyz.ai
-        is_demo_user = user_id and (not await self._user_exists_in_db(user_id))
-        
         if is_demo_user:
             # Return deterministic response for demo users without database operations
             return self._get_demo_response(message, user_role, conversation_id, language)
@@ -350,14 +348,6 @@ Rules:
             ]
         }
         return follow_ups.get(user_role, [])
-    
-    async def _user_exists_in_db(self, user_id: str) -> bool:
-        """Check if user exists in database."""
-        try:
-            result = await self.db.execute(select(User).where(User.id == user_id))
-            return result.scalar_one_or_none() is not None
-        except Exception:
-            return False
     
     def _get_demo_response(
         self,
