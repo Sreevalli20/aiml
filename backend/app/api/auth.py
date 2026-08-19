@@ -120,12 +120,11 @@ async def demo_login(
     request: Request,
     db: AsyncSession = Depends(get_db)
 ):
-    """Demo login without password - creates or retrieves demo user in database."""
+    """Demo login without password - returns in-memory demo user without database dependency."""
     from app.security.jwt import create_access_token
     from datetime import timedelta
     from app.config import settings
     from app.models.user import UserRole
-    from sqlalchemy import select
     import uuid
     
     # Convert string role to UserRole enum
@@ -137,29 +136,18 @@ async def demo_login(
             detail=f"Invalid role: {request_data.role}. Must be one of: student, parent, teacher, principal"
         )
     
+    # Create in-memory demo user (no database dependency)
+    user_id = str(uuid.uuid4())
     role_str = role_enum.value
-    demo_email = f"demo_{role_str}@xyz.ai"
-    demo_username = f"demo_{role_str}"
-    
-    # Check if demo user already exists in database
-    result = await db.execute(select(User).where(User.email == demo_email))
-    user = result.scalar_one_or_none()
-    
-    # If not exists, create demo user in database
-    if user is None:
-        user_id = str(uuid.uuid4())
-        user = User(
-            id=user_id,
-            email=demo_email,
-            username=demo_username,
-            hashed_password="demo_hash",
-            full_name=f"Demo {role_str.capitalize()}",
-            role=role_enum,
-            is_active=True
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
+    user = User(
+        id=user_id,
+        email=f"demo_{role_str}@xyz.ai",
+        username=f"demo_{role_str}",
+        hashed_password="demo_hash",
+        full_name=f"Demo {role_str.capitalize()}",
+        role=role_enum,
+        is_active=True
+    )
     
     # Create access token using existing JWT creation logic
     access_token = create_access_token(

@@ -31,12 +31,26 @@ async def get_current_user(
     result = await db.execute(select(User).where(User.id == token_data.user_id))
     user = result.scalar_one_or_none()
     
+    # If user not found in database, check if it's a demo user (in-memory)
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        # Demo users have emails ending with @xyz.ai and are reconstructed from token
+        if token_data.user_id and token_data.role:
+            # Reconstruct demo user from token data
+            user = User(
+                id=token_data.user_id,
+                email=f"demo_{token_data.role}@xyz.ai",
+                username=f"demo_{token_data.role}",
+                hashed_password="demo_hash",
+                full_name=f"Demo {token_data.role.capitalize()}",
+                role=UserRole(token_data.role),
+                is_active=True
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
     
     if not user.is_active:
         raise HTTPException(
