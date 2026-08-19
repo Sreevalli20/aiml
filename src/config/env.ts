@@ -22,7 +22,8 @@ const getInitialBaseUrl = (): string => {
     if (saved) return saved.trim();
   }
   
-  return '';
+  // Production fallback to public backend
+  return 'https://xyz-ai-backend-gu7m.onrender.com';
 };
 
 export const API_CONFIG = {
