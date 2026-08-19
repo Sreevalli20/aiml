@@ -68,26 +68,28 @@ async def send_message(
             is_demo_user=is_demo_user
         )
         
-        # Log conversation message
-        await audit_service.log_action(
-            user_id=current_user.id,
-            user_role=current_user.role.value,
-            action=AuditAction.CONVERSATION_MESSAGE,
-            resource_type="conversation",
-            resource_id=result["conversation_id"],
-            success=True
-        )
+        # Log conversation message (skip for demo users)
+        if not is_demo_user:
+            await audit_service.log_action(
+                user_id=current_user.id,
+                user_role=current_user.role.value,
+                action=AuditAction.CONVERSATION_MESSAGE,
+                resource_type="conversation",
+                resource_id=result["conversation_id"],
+                success=True
+            )
         
         return ChatResponse(**result)
     except Exception as e:
         # Fallback response for demo when AI provider is unavailable
-        await audit_service.log_action(
-            user_id=current_user.id,
-            user_role=current_user.role.value,
-            action=AuditAction.CONVERSATION_MESSAGE,
-            success=False,
-            details={"error": str(e)}
-        )
+        if not is_demo_user:
+            await audit_service.log_action(
+                user_id=current_user.id,
+                user_role=current_user.role.value,
+                action=AuditAction.CONVERSATION_MESSAGE,
+                success=False,
+                details={"error": str(e)}
+            )
         
         # Return deterministic fallback response instead of 500
         message_lower = request_data.message.lower()
