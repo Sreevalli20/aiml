@@ -41,7 +41,6 @@ yarn-error.log*
 # Build artifacts
 *.egg-info/
 .eggs/
-dist/
 
 .vercel
 .env*
