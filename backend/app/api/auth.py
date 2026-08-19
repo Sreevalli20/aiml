@@ -139,7 +139,19 @@ async def demo_login(
     # Create in-memory demo user (no database dependency)
     user_id = str(uuid.uuid4())
     role_str = role_enum.value
-    user = User(
+    
+    # Lightweight demo user object with required attributes
+    class DemoUser:
+        def __init__(self, id, email, username, hashed_password, full_name, role, is_active):
+            self.id = id
+            self.email = email
+            self.username = username
+            self.hashed_password = hashed_password
+            self.full_name = full_name
+            self.role = role
+            self.is_active = is_active
+    
+    user = DemoUser(
         id=user_id,
         email=f"demo_{role_str}@xyz.ai",
         username=f"demo_{role_str}",

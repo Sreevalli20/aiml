@@ -10,13 +10,25 @@ from app.security.jwt import decode_token, TokenData
 from app.security.authorization import AuthorizationError
 
 
+class DemoUser:
+    """Lightweight demo user for in-memory authentication."""
+    def __init__(self, id, email, username, hashed_password, full_name, role, is_active):
+        self.id = id
+        self.email = email
+        self.username = username
+        self.hashed_password = hashed_password
+        self.full_name = full_name
+        self.role = role
+        self.is_active = is_active
+
+
 security = HTTPBearer()
 
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db)
-) -> User:
+):
     """Get the current authenticated user from JWT token."""
     try:
         token_data = decode_token(credentials.credentials)
@@ -36,7 +48,7 @@ async def get_current_user(
         # Demo users have emails ending with @xyz.ai and are reconstructed from token
         if token_data.user_id and token_data.role:
             # Reconstruct demo user from token data
-            user = User(
+            user = DemoUser(
                 id=token_data.user_id,
                 email=f"demo_{token_data.role}@xyz.ai",
                 username=f"demo_{token_data.role}",
