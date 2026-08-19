@@ -32,23 +32,21 @@ async def get_my_attendance(
             detail="Only students can view their own attendance"
         )
     
-    audit_service = AuditService(db)
-    attendance_service = AttendanceService(db)
-    student_repo = StudentRepository(db)
-    
-    student = await student_repo.get_by_user_id(current_user.id)
-    
-    # If no student profile exists (demo user), return sample data
-    if not student:
-        await audit_service.log_action(
-            user_id=current_user.id,
-            user_role=current_user.role.value,
-            action=AuditAction.ATTENDANCE_VIEW,
-            resource_type="attendance",
-            resource_id="demo",
-            success=True,
-            details={"demo": True}
-        )
+    # For demo users, return sample data directly
+    if current_user.username.startswith("demo_"):
+        try:
+            audit_service = AuditService(db)
+            await audit_service.log_action(
+                user_id=current_user.id,
+                user_role=current_user.role.value,
+                action=AuditAction.ATTENDANCE_VIEW,
+                resource_type="attendance",
+                resource_id="demo",
+                success=True,
+                details={"demo": True}
+            )
+        except Exception:
+            pass  # Don't block on audit failures
         
         return AttendanceResponse(
             student_id="demo_student",
@@ -62,6 +60,18 @@ async def get_my_attendance(
                 {"month": "February", "present": 18, "working": 20, "percentage": 90.0},
                 {"month": "March", "present": 22, "working": 22, "percentage": 100.0},
             ]
+        )
+    
+    audit_service = AuditService(db)
+    attendance_service = AttendanceService(db)
+    student_repo = StudentRepository(db)
+    
+    student = await student_repo.get_by_user_id(current_user.id)
+    
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student profile not found"
         )
     
     try:
