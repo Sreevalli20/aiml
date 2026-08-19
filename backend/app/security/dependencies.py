@@ -35,15 +35,21 @@ async def get_current_user(
     if user is None:
         try:
             role_enum = UserRole(token_data.role)
-            user = User(
-                id=token_data.user_id,
-                email=f"demo_{token_data.role}@xyz.ai",
-                username=f"demo_{token_data.role}",
-                hashed_password="demo_hash",
-                full_name=f"Demo {token_data.role.capitalize()}",
-                role=role_enum,
-                is_active=True
-            )
+            # Create a simple object that mimics User for demo purposes
+            class DemoUser:
+                def __init__(self):
+                    self.id = token_data.user_id
+                    self.email = f"demo_{token_data.role}@xyz.ai"
+                    self.username = f"demo_{token_data.role}"
+                    self.hashed_password = "demo_hash"
+                    self.full_name = f"Demo {token_data.role.capitalize()}"
+                    self.role = role_enum
+                    self.is_active = True
+                    self.student = None
+                    self.parent = None
+                    self.teacher = None
+            
+            user = DemoUser()
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
