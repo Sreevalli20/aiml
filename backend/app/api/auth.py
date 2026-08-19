@@ -120,16 +120,12 @@ async def demo_login(
     request: Request,
     db: AsyncSession = Depends(get_db)
 ):
-    """Demo login without password - finds or creates a demo user for the role."""
-    from sqlalchemy import select
+    """Demo login without password - returns in-memory demo user without database dependency."""
     from app.security.jwt import create_access_token
     from datetime import timedelta
     from app.config import settings
     from app.models.user import UserRole
     import uuid
-    
-    auth_service = AuthService(db)
-    audit_service = AuditService(db)
     
     # Convert string role to UserRole enum
     try:
@@ -140,38 +136,18 @@ async def demo_login(
             detail=f"Invalid role: {request_data.role}. Must be one of: student, parent, teacher, principal"
         )
     
-    # Find an existing active user with the requested role
-    result = await db.execute(
-        select(User)
-        .where(User.role == role_enum)
-        .where(User.is_active == True)
-        .limit(1)
+    # Create in-memory demo user (no database dependency)
+    user_id = str(uuid.uuid4())
+    role_str = role_enum.value
+    user = User(
+        id=user_id,
+        email=f"demo_{role_str}@xyz.ai",
+        username=f"demo_{role_str}",
+        hashed_password="demo_hash",
+        full_name=f"Demo {role_str.capitalize()}",
+        role=role_enum,
+        is_active=True
     )
-    user = result.scalar_one_or_none()
-    
-    # If no user exists, create a demo user
-    if not user:
-        from passlib.context import CryptContext
-        
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        demo_password = "demo123"
-        hashed_password = pwd_context.hash(demo_password)
-        
-        user_id = str(uuid.uuid4())
-        role_str = role_enum.value
-        
-        user = User(
-            id=user_id,
-            email=f"demo_{role_str}@xyz.ai",
-            username=f"demo_{role_str}",
-            hashed_password=hashed_password,
-            full_name=f"Demo {role_str.capitalize()}",
-            role=role_enum,
-            is_active=True
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
     
     # Create access token using existing JWT creation logic
     access_token = create_access_token(
@@ -181,6 +157,7 @@ async def demo_login(
     
     # Log successful demo login (non-blocking)
     try:
+        audit_service = AuditService(db)
         await audit_service.log_action(
             user_id=user.id,
             user_role=user.role.value,

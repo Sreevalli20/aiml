@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-1.5-flash"
     
     # CORS
-    cors_origins: str = "http://localhost:3000,http://localhost:5173"
+    cors_origins: str = "http://localhost:3000,http://localhost:5173,https://xyz-ai-human-like-ai-school-assista.vercel.app"
     
     # Application
     app_name: str = "XYZ AI School Assistant"
