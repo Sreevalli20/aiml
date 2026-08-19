@@ -1,9 +1,10 @@
 from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 import re
 import uuid
 
-from app.models.user import UserRole
+from app.models.user import UserRole, User
 from app.ai.llm_client import LLMClient
 from app.ai.tools import get_tool_registry, Tool
 from app.repositories.conversation_repository import ConversationRepository
@@ -27,6 +28,14 @@ class AIOrchestrator:
         language: str = "en"
     ) -> dict:
         """Process a user message through the AI orchestration pipeline."""
+        
+        # Check for demo user (in-memory user without database record)
+        # Demo users have emails ending with @xyz.ai
+        is_demo_user = user_id and (not await self._user_exists_in_db(user_id))
+        
+        if is_demo_user:
+            # Return deterministic response for demo users without database operations
+            return self._get_demo_response(message, user_role, conversation_id, language)
         
         # Get or create conversation
         if conversation_id:
@@ -341,3 +350,62 @@ Rules:
             ]
         }
         return follow_ups.get(user_role, [])
+    
+    async def _user_exists_in_db(self, user_id: str) -> bool:
+        """Check if user exists in database."""
+        try:
+            result = await self.db.execute(select(User).where(User.id == user_id))
+            return result.scalar_one_or_none() is not None
+        except Exception:
+            return False
+    
+    def _get_demo_response(
+        self,
+        message: str,
+        user_role: UserRole,
+        conversation_id: Optional[str],
+        language: str
+    ) -> dict:
+        """Get deterministic response for demo users without database operations."""
+        message_lower = message.lower()
+        
+        # Attendance query
+        if "attendance" in message_lower:
+            if user_role == UserRole.STUDENT:
+                response = "Your demo attendance is 92%. You've attended 166 out of 180 recorded classes. This is sample data for the demo."
+            elif user_role == UserRole.PARENT:
+                response = "Your child's demo attendance is 92%. This is sample data for the demo."
+            elif user_role == UserRole.TEACHER:
+                response = "Class attendance for demo: 92%. This is sample data for the demo."
+            elif user_role == UserRole.PRINCIPAL:
+                response = "Overall school attendance for demo: 92%. This is sample data for the demo."
+            else:
+                response = "Attendance data is available for demo users."
+            intent = "get_my_attendance"
+        # Grades query
+        elif any(word in message_lower for word in ["grade", "marks", "score", "gpa"]):
+            response = "Your current demo GPA is 3.4. This is sample data for the demo."
+            intent = "get_grades"
+        # Homework/assignments
+        elif any(word in message_lower for word in ["homework", "assignment", "due"]):
+            response = "You have 2 assignments due this week in the demo. Check your dashboard for details."
+            intent = "get_assignments"
+        # Exams
+        elif any(word in message_lower for word in ["exam", "test", "schedule"]):
+            response = "Your next demo exam is Mathematics on Friday at 10 AM. This is sample data for the demo."
+            intent = "get_exams"
+        # Default
+        else:
+            response = "I'm your demo AI assistant. I can help you check your attendance, grades, and schedule. Try asking 'What is my attendance?'"
+            intent = "general_query"
+        
+        return {
+            "conversation_id": conversation_id or "demo",
+            "message": response,
+            "language": language,
+            "intent": intent,
+            "requires_clarification": False,
+            "action_performed": False,
+            "action_required": None,
+            "suggested_follow_ups": ["What is my attendance?", "Show my grades", "Upcoming exams"]
+        }
