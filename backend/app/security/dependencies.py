@@ -31,12 +31,25 @@ async def get_current_user(
     result = await db.execute(select(User).where(User.id == token_data.user_id))
     user = result.scalar_one_or_none()
     
+    # If user not found in database, reconstruct from token for demo users
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        try:
+            role_enum = UserRole(token_data.role)
+            user = User(
+                id=token_data.user_id,
+                email=f"demo_{token_data.role}@xyz.ai",
+                username=f"demo_{token_data.role}",
+                hashed_password="demo_hash",
+                full_name=f"Demo {token_data.role.capitalize()}",
+                role=role_enum,
+                is_active=True
+            )
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid user role in token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
     
     if not user.is_active:
         raise HTTPException(
